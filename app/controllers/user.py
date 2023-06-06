@@ -12,6 +12,21 @@ from sqlalchemy import update
 import cloudinary,os
 from cloudinary.uploader import upload
 
+def get_create_user():
+    try:
+        role = Roles.query.all()
+
+        list_role = []
+        for i in role:
+            list_role.append({
+                "id_role": i.id_role,
+                "role": i.name
+            })
+
+        return response_handler.ok(list_role,'')
+    except Exception as err:
+        return response_handler.bad_gateway(str(err))
+
 def create_user():
     try:
         # json_body = request.json
@@ -19,6 +34,7 @@ def create_user():
         # result = Checker(request_struct.User(), soft=True).validate(data)
         result = request.json
         select_user = User.query.all()
+        
 
         # iterasi tbl_user
         list = []
