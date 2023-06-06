@@ -18,4 +18,3 @@ class validator_update_user(Inputs):
         "address": [DataRequired(message='Address is Required')]
     }
 
-

@@ -54,6 +54,7 @@ def create_user():
                     email = result['email'],
                     password = hash_password(result['password']),
                     picture = os.getenv('DEFAULT_PROFILE'),
+                    id_role = str(result['id_role']),
                     created_at = datetime.now(),
                     updated_at = None
                     )
@@ -62,13 +63,8 @@ def create_user():
                           id_user = id_user,
                           created_at = datetime.now())
         
-        role = Roles(id_role = uuid4(),
-                    id_user = id_user,
-                    created_at = datetime.now())
-        
         db.session.add(user)
         db.session.add(address)
-        db.session.add(role)
         db.session.commit()
 
         data = {
@@ -76,7 +72,8 @@ def create_user():
             "name": user.name,
             "email": user.email,
             "password": user.password,
-            "created_at": user.created_at
+            "created_at": user.created_at,
+            "role": user.id_role
         }
         return response_handler.created(data, 'User Successfull Created')
     
@@ -100,6 +97,7 @@ def read_user(id):
         
         user = User.query.get(id)
         address = user.address
+        role = Roles.query.get(user.id_role)
         
         data = {
             "id_user": user.id_user,
@@ -111,7 +109,12 @@ def read_user(id):
             "address": {
                 "id_address": address.id_address,
                 "address": address.address
+            },
+            "role":{
+                "id_role": role.id_role,
+                "role": role.name
             }
+            
         }
         return response_handler.ok(data,"")
 
@@ -130,9 +133,9 @@ def update_user(id):
         if not exist:
             return response_handler.not_found('User Not Found')
         
-        json_body = request.form
-        data = request_mapping.update_user(json_body)
-        result = Checker(request_struct.update_user(), soft=True).validate(data)
+        result = request.form
+        # data = request_mapping.update_user(json_body)
+        # result = Checker(request_struct.update_user(), soft=True).validate(data)
 
         validator = validator_update_user(request)
         if not validator.validate():
