@@ -6,6 +6,7 @@ from uuid import uuid4
 from datetime import datetime
 from app.models.user import User
 from app.models.address import Address
+from app.models.roles import Roles
 from app.response_validator import *
 from sqlalchemy import update
 import cloudinary,os
@@ -13,10 +14,10 @@ from cloudinary.uploader import upload
 
 def create_user():
     try:
-        json_body = request.json
-        data = request_mapping.create_user(json_body)
-        result = Checker(request_struct.User(), soft=True).validate(data)
-        
+        # json_body = request.json
+        # data = request_mapping.create_user(json_body)
+        # result = Checker(request_struct.User(), soft=True).validate(data)
+        result = request.json
         select_user = User.query.all()
 
         # iterasi tbl_user
@@ -61,8 +62,13 @@ def create_user():
                           id_user = id_user,
                           created_at = datetime.now())
         
+        role = Roles(id_role = uuid4(),
+                    id_user = id_user,
+                    created_at = datetime.now())
+        
         db.session.add(user)
         db.session.add(address)
+        db.session.add(role)
         db.session.commit()
 
         data = {

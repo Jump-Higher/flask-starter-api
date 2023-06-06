@@ -13,3 +13,4 @@ class User(db.Model):
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
     address = db.relationship('Address', backref='tbl_user', uselist=False)
+    role = db.relationship('Roles', backref='tbl_user', uselist=False)

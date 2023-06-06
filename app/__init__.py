@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from config import Db_config, Cloudinary_config
 from flask_migrate import Migrate
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from app.prefix_middleware import PrefixMiddleware
 import cloudinary, os
 
@@ -14,6 +15,8 @@ app.config.from_object(Cloudinary_config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 CORS(app)
+app.config["JWT_SECRET_KEY"] = "super-secret" 
+jwt = JWTManager(app)
 app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/starter-api/v1')
 
 
