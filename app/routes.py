@@ -8,7 +8,10 @@ app.route('/user/update/<id>',methods = ['PUT'])(user.update_user)
 app.route('/user/delete/<id>',methods = ['DELETE'])(user.delete_user)
 app.route('/users',methods = ['GET'])(user.list_user)
 
-app.route('/roles/create', methods = ['POST'])(roles.create_role)
+app.route('/role/create', methods = ['POST'])(roles.create_role)
+app.route('/roles', methods = ['GET'])(roles.read_roles)
+app.route('/role/update/<id>', methods = ['PUT'])(roles.edit_role)
+# app.route('/role/delete/<id>', methods = ['DELETE'])(roles.delete_role)
 
 app.route('/login', methods=['POST'])(auth.login)
 
