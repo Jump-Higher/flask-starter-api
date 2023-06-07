@@ -15,3 +15,6 @@ app.route('/role/update/<id>', methods = ['PUT'])(roles.edit_role)
 
 app.route('/login', methods=['POST'])(auth.login)
 
+@app.route('/')
+def home():
+    return "WELCOME TO FLASK STARTER API"
