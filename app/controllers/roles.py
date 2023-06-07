@@ -68,7 +68,6 @@ def edit_role(id):
             return response_handler.not_found('Role not found')
         
         list_role_name = [role.name for role in query_roles]
-        print(list_role_name)
         if json_body['name'] in list_role_name:
             return response_handler.bad_request('Role is exist')
         
