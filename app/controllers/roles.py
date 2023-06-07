@@ -88,6 +88,43 @@ def edit_role(id):
         return response_handler.bad_request(f'{err.args[0]} field must be filled')
     except Exception as err:
         return response_handler.bad_gateway(data="server error")
+    
+def list_role():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 5, type=int )
+        total_role = Roles.query.count()
+        if not per_page:
+            per_page = total_role
+
+        role = Roles.query.order_by(Roles.created_at.desc()).paginate(page = page, per_page = per_page)
+        data = []
+        for role in role.items:
+            data.append({
+                "id_role": role.id_role,
+                "name": role.name,
+                "created_at": role.created_at
+            })
+        meta = {
+            "page": role.page,
+            "pages": role.pages,
+            "total_count": role.total,
+            "prev_page": role.prev_num,
+            "next_page": role.next_num,
+            "has_prev": role.has_prev,
+            "has_next": role.has_next
+        }
+        return response_handler.ok_with_meta(data,meta)
+    except Exception as err:
+        return response_handler.bad_gateway(err)
+    
+def bulk_delete_roles():
+    json_body = request.json
+    id_role_delete = json_body.get('id_role') if json_body else []
+
+    db.session.query(Roles).filter(Roles.id_role.in_(id_role_delete)).delete(synchronize_session=False)
+    db.session.commit()
+    return response_handler.ok(None, "Delete Roles Successfull")
 
 # def delete_role(id):
 #     try:

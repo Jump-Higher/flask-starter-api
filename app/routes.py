@@ -11,7 +11,8 @@ app.route('/users',methods = ['GET'])(user.list_user)
 app.route('/role/create', methods = ['POST'])(roles.create_role)
 app.route('/roles', methods = ['GET'])(roles.read_roles)
 app.route('/role/update/<id>', methods = ['PUT'])(roles.edit_role)
-# app.route('/role/delete/<id>', methods = ['DELETE'])(roles.delete_role)
+app.route('/role/delete', methods = ['DELETE'])(roles.bulk_delete_roles)
+app.route('/roles', methods=['GET'])(roles.list_role)
 
 app.route('/login', methods=['POST'])(auth.login)
 
