@@ -4,13 +4,15 @@ from app import db, request_mapping, request_struct, response_handler
 from app.hash import hash_password
 from uuid import uuid4
 from datetime import datetime
-from app.models.user import User
+from app.models.user import *
 from app.models.address import Address
 from app.models.roles import Roles
 from app.response_validator import *
 from sqlalchemy import update
 import cloudinary,os
 from cloudinary.uploader import upload
+from app.schema.user_schema import UserSchema
+from app.models.roles import select_user_role
 
 def get_create_user():
     try:
@@ -29,16 +31,17 @@ def get_create_user():
 
 def create_user():
     try:
-        # json_body = request.json
-        # data = request_mapping.create_user(json_body)
-        # result = Checker(request_struct.User(), soft=True).validate(data)
-        result = request.json
-        select_user = User.query.all()
+        json_body = request.json
+        user_schema = UserSchema()
         
-
+        # checking errors with schema
+        errors = user_schema.validate(json_body, partial=('name', 'username', 'email', 'password'))
+        if errors:
+            return response_handler.bad_request(errors)
+        
         # iterasi tbl_user
         list = []
-        for i in select_user:
+        for i in select_users():
             list.append({
                 "username": i.username,
                 "email": i.email
@@ -46,51 +49,41 @@ def create_user():
         
         # validate if username and email is exist
         for i in list:
-            if result['username'] == i['username']:
+            if json_body['username'] == i['username']:
                 return response_handler.bad_request('Username is Exist')
-            elif result['email'] == i['email']:
+            elif json_body['email'] == i['email']:
                 return response_handler.bad_request('Email is Exist')
-                
-        # validate field
-        validator = validator_user(request)   
-        if not validator.validate():
-            errors = validator.errors
-            for field in result:
-                if field in errors:
-                    return response_handler.bad_request(errors['{field}'][0])
-            return response_handler.bad_request(errors)
-
+    
         # tbl_address
-        id_user = uuid4()
+        id_address = uuid4()
+        date = datetime.now()
+        id_role = select_user_role()
 
         # tbl_user
-        user = User(id_user = id_user, 
-                    name = result['name'],
-                    username = result['username'],
-                    email = result['email'],
-                    password = hash_password(result['password']),
+        new_user = User(id_user = uuid4(), 
+                    name = json_body['name'],
+                    username = json_body['username'],
+                    email = json_body['email'],
+                    password = hash_password(json_body['password']),
                     picture = os.getenv('DEFAULT_PROFILE'),
-                    id_role = str(result['id_role']),
-                    created_at = datetime.now(),
-                    updated_at = None
+                    id_role = id_role,
+                    id_address = id_address,
+                    is_active = False,
+                    created_at = date,
+                    updated_at = date,
                     )
         
-        address = Address(id_address = uuid4(),
-                          id_user = id_user,
-                          created_at = datetime.now())
+        address = Address(id_address = id_address,
+                          created_at = date,
+                          updated_at = date)
         
-        db.session.add(user)
+        db.session.add(new_user)
         db.session.add(address)
         db.session.commit()
 
-        data = {
-            "id_user": user.id_user,
-            "name": user.name,
-            "email": user.email,
-            "password": user.password,
-            "created_at": user.created_at,
-            "role": user.id_role
-        }
+        user_schema = UserSchema(only=('id_user', 'name', 'username', 'email', 'password', 'created_at'))
+        data = user_schema.dump(new_user)
+
         return response_handler.created(data, 'User Successfull Created')
     
     except KeyError as err:

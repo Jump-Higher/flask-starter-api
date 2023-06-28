@@ -10,6 +10,6 @@ class Address(db.Model):
     address = db.Column(db.String(150))
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
-    id_user = db.Column(UUID(as_uuid=True), db.ForeignKey('tbl_user.id_user'))
+    user = db.relationship('User', backref='tbl_address', uselist=False)
     # id_region = db.Column(UUID(as_uuid=True), db.ForeignKey('tbl_regiences.id_region'))
 

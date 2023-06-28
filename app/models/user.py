@@ -10,8 +10,13 @@ class User(db.Model):
     email = db.Column(db.String(50), nullable=False)
     password = db.Column(db.String(40), nullable=False)
     picture = db.Column(db.String(200), nullable=True)
+    phone_number = db.Column(db.String(16))
+    is_active = db.Column(db.Boolean)
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
-    address = db.relationship('Address', backref='tbl_user', uselist=False)
+    id_address = db.Column(UUID(as_uuid=True), db.ForeignKey('tbl_address.id_address'))
     id_role = db.Column(UUID(as_uuid=True), db.ForeignKey('tbl_roles.id_role'))
 
+def select_users():
+    select_users = User.query.all()
+    return select_users
