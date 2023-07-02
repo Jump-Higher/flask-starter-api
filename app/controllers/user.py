@@ -5,14 +5,17 @@ from app.hash import hash_password
 from uuid import uuid4
 from datetime import datetime
 from app.models.user import *
-from app.models.address import Address
+from app.models.address import Address, select_user_address
 from app.models.roles import Roles
 from app.response_validator import *
 from sqlalchemy import update
 import cloudinary,os
 from cloudinary.uploader import upload
 from app.schema.user_schema import UserSchema
-from app.models.roles import select_user_role
+from app.schema.roles_schema import RolesSchema
+from app.schema.address_schema import AddressSchema
+from app.models.roles import select_user_role 
+
 
 def get_create_user():
     try:
@@ -54,12 +57,11 @@ def create_user():
             elif json_body['email'] == i['email']:
                 return response_handler.bad_request('Email is Exist')
     
-        # tbl_address
         id_address = uuid4()
         date = datetime.now()
         id_role = select_user_role()
 
-        # tbl_user
+        # add to tbl_user
         new_user = User(id_user = uuid4(), 
                     name = json_body['name'],
                     username = json_body['username'],
@@ -73,6 +75,7 @@ def create_user():
                     updated_at = date,
                     )
         
+        # add to tbl_address
         address = Address(id_address = id_address,
                           created_at = date,
                           updated_at = date)
@@ -94,9 +97,15 @@ def create_user():
     
 def read_user(id):
     try:
-        id_user = User.query.values(User.id_user)
+        # add schema
+        user_schema = UserSchema()
+        role_schema = RolesSchema()
+        address_schema = AddressSchema()
+
+        # check user is exist or not
+        select_user = select_user_by_id(id) 
         exist = False
-        for i in id_user:
+        for i in select_user:
             if(str(i.id_user) == id):
                 exist = True
                 break
@@ -104,27 +113,16 @@ def read_user(id):
         if not exist:
             return response_handler.not_found('User Not Found')
         
-        user = User.query.get(id)
-        address = user.address
-        role = Roles.query.get(user.id_role)
-        
-        data = {
-            "id_user": user.id_user,
-            "name": user.name,
-            "email": user.email,
-            "password": user.password,
-            "picture": user.picture,
-            "created_at": user.created_at,
-            "address": {
-                "id_address": address.id_address,
-                "address": address.address
-            },
-            "role":{
-                "id_role": role.id_role,
-                "role": role.name
-            }
-            
-        }
+        # add data user to response
+        user = select_by_id(id)    
+        data = user_schema.dump(user)
+
+        role = user.tbl_roles
+        role_data = role_schema.dump(role)
+
+        address = user.tbl_address
+        address_data = address_schema.dump(address)
+
         return response_handler.ok(data,"")
 
     except Exception as err:
@@ -132,46 +130,61 @@ def read_user(id):
     
 def update_user(id):
     try:
-        id_user = User.query.all()
+
+        # check user is exist or not
+        select_user = select_users()
         exist = False
-        for i in id_user:
+        for i in select_user:
             if(str(i.id_user) == id):
                 exist = True
                 break
-            
+        
         if not exist:
             return response_handler.not_found('User Not Found')
         
-        result = request.form
-        # data = request_mapping.update_user(json_body)
-        # result = Checker(request_struct.update_user(), soft=True).validate(data)
-
-        validator = validator_update_user(request)
-        if not validator.validate():
-            errors = validator.errors
-            for field in result:
-                if field in errors:
-                    return response_handler.bad_request(errors['{field}'][0])
+        form_body = request.form
+        user_schema = UserSchema()
+        address_schema = AddressSchema()
+        # checking errors with schema
+        errors = user_schema.validate(form_body)
+        address_errors = address_schema.validate(form_body['address'])
+        if errors:
             return response_handler.bad_request(errors)
+        elif address_errors:
+            return response_handler.bad_request(address_errors)
         
-        
-        user = User.query.filter_by(id_user = id).first()
-        address = user.address
+        date = datetime.now()
 
-        if result['username'] == user.username:
-            user.username = result['username']
+        # select user by id
+        user = select_by_id(id)
+
+        # select address by id
+        address = select_user_address(str(user.id_address))
+        
+        # check username is exist or not
+        if form_body['username'] == user.username:
+            user.username = form_body['username']
         else:
-            existing_user = User.query.filter_by(username=result['username']).first()
+            existing_user = User.query.filter_by(username=form_body['username']).first()
             if existing_user:
                 return response_handler.bad_request('Username already exists')
 
-        user.name = result['name']
-        user.username = result['username']
-        user.email = result['email']
-        user.password = hash_password(result['password'])
-        address.address = result['address']
+        # update user
+        user.name = form_body['name']
+        user.username = form_body['username']
+        user.email = form_body['email']
+        user.password = hash_password(form_body['password'])
+        user.updated_at = date
+        user.phone_number = form_body['phone_number']
 
         uploadImage = request.files['picture']
+        
+        
+        # update address
+        
+        address.address = form_body['address']
+        address.updated_at = date
+
         cloudinary_response = cloudinary.uploader.upload(uploadImage,
                                                folder = "api-blog/users/",
                                                public_id = "user_"+str(user.id_user),
@@ -182,7 +195,7 @@ def update_user(id):
                                                radius = "max",
                                                crop = "fill"
                                                ) 
-        user.picture = cloudinary_response["url"]    
+        user.picture = cloudinary_response["url"]  
 
         db.session.commit()
 

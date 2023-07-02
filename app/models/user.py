@@ -17,6 +17,17 @@ class User(db.Model):
     id_address = db.Column(UUID(as_uuid=True), db.ForeignKey('tbl_address.id_address'))
     id_role = db.Column(UUID(as_uuid=True), db.ForeignKey('tbl_roles.id_role'))
 
+# object
 def select_users():
     select_users = User.query.all()
     return select_users
+
+# query object
+def select_user_by_id(id_user):
+    select_user = User.query.values(User.id_user)
+    return select_user
+
+# object
+def select_by_id(id_user):
+    select_user = User.query.get(id_user)
+    return select_user
