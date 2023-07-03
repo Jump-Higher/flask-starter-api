@@ -1,6 +1,7 @@
 from marshmallow import Schema, fields, validate
 
 class RolesSchema(Schema):
+    
     id_role = fields.UUID(dump_only=True)
     name = fields.Str(required=True,
                       validate=[

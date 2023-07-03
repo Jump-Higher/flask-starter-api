@@ -10,7 +10,7 @@ class Roles(db.Model):
     name = db.Column(db.String(50))
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
-    user = db.relationship('User', backref='tbl_roles', uselist=False)
+    #user = db.relationship('User', backref='tbl_roles', uselist=False)
 
 def select_user_role():
     query = select(Roles.id_role).where(Roles.name == 'user')

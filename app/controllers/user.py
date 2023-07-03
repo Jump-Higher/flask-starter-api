@@ -71,6 +71,7 @@ def create_user():
                     id_role = id_role,
                     id_address = id_address,
                     is_active = False,
+                    is_deleted = False,
                     created_at = date,
                     updated_at = date,
                     )
@@ -103,14 +104,8 @@ def read_user(id):
         address_schema = AddressSchema()
 
         # check user is exist or not
-        select_user = select_user_by_id(id) 
-        exist = False
-        for i in select_user:
-            if(str(i.id_user) == id):
-                exist = True
-                break
-        
-        if not exist:
+        select_user = select_user_by_id(id)
+        if select_user is None:
             return response_handler.not_found('User Not Found')
         
         # add data user to response
@@ -119,9 +114,11 @@ def read_user(id):
 
         role = user.tbl_roles
         role_data = role_schema.dump(role)
+        data['role'] = role_data
 
         address = user.tbl_address
         address_data = address_schema.dump(address)
+        data['address'] = address_data
 
         return response_handler.ok(data,"")
 
@@ -130,7 +127,6 @@ def read_user(id):
     
 def update_user(id):
     try:
-
         # check user is exist or not
         select_user = select_users()
         exist = False
@@ -145,14 +141,15 @@ def update_user(id):
         form_body = request.form
         user_schema = UserSchema()
         address_schema = AddressSchema()
+        role_schema = RolesSchema()
+        address_data = {'address': form_body['address']}
         # checking errors with schema
         errors = user_schema.validate(form_body)
-        address_errors = address_schema.validate(form_body['address'])
+        address_errors = address_schema.validate(address_data)
         if errors:
             return response_handler.bad_request(errors)
         elif address_errors:
             return response_handler.bad_request(address_errors)
-        
         date = datetime.now()
 
         # select user by id
@@ -199,18 +196,10 @@ def update_user(id):
 
         db.session.commit()
 
-        data = {
-            "id_user": user.id_user,
-            "name": user.name,
-            "email": user.email,
-            "password": user.password,
-            "picture": user.picture,
-            "created_at": user.created_at,
-            "address": {
-                "id_address": address.id_address,
-                "address": address.address
-            }
-        }
+        # add data to schema
+        user = select_by_id(id)    
+        data = user_schema.dump(form_body)
+
         return response_handler.ok(data, "Your data is updated")
 
     except KeyError as err:
@@ -231,10 +220,11 @@ def delete_user(id):
         if not exists:
             return response_handler.not_found('User Not Found')
         
-        user = User.query.get(id)
-        db.session.delete(user)
+        user = select_by_id(id)
+        user.is_deleted = True
+
         db.session.commit()
-        cloudinary.uploader.destroy("api-blog/users/user_"+str(user.id_user))
+        # cloudinary.uploader.destroy("api-blog/users/user_"+str(user.id_user))
         return response_handler.ok("","User Successfull Deleted")
     
     except Exception as err:
@@ -248,6 +238,19 @@ def list_user():
         if not per_page:
             per_page = total_user
 
+       
+        total_page = (total_user-1+per_page)//per_page
+        if (page <= 0 or page > total_page ):
+            response= {
+                "code": "404",
+                "status": "NOT_FOUND",
+                "errors": "page cannot negative value or more than total page",
+                "data": {
+                    "total_page": total_page
+                }
+            }
+            return response_handler.not_found(response)
+
         user = User.query.order_by(User.created_at.desc()).paginate(page = page, per_page = per_page)
         data = []
         for i in user.items:
@@ -260,6 +263,10 @@ def list_user():
                 "address":{
                     "id_address": i.address.id_address,
                     "address": i.address.address
+                },
+                "role":{
+                    "id_role": i.roles.id_role,
+                    "role": i.roles.name
                 }
             })
         meta = {
