@@ -17,3 +17,11 @@ def select_user_role():
     result = db.session.execute(query)
     id_role = result.scalar()
     return id_role
+
+def super_admin_role():
+    query = select(Roles.id_role).where(Roles.name == 'super_admin')
+    result = db.session.execute(query)
+    id_role = result.scalar()
+    return id_role
+ 
+

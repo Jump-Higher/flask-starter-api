@@ -48,7 +48,12 @@ def forbidden(data):
     return make_response(jsonify(data)),HTTPStatus.FORBIDDEN.value
 
 def unautorized(data):
-    return make_response(jsonify(data)),HTTPStatus.UNAUTHORIZED.value
+    response = {
+        "code": "401",
+        "status": "UNAUTHORIZED",
+        "errors": data
+    }
+    return make_response(jsonify(response)),HTTPStatus.UNAUTHORIZED.value
 
 def not_found(data):
     response = {

@@ -1,30 +1,37 @@
 from app import response_handler
 from flask import request
-from app.models.roles import Roles
+from app.models.roles import Roles, super_admin_role
 from uuid import uuid4
 from datetime import datetime
 from app import db
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
+@jwt_required()
 def create_role():
     try:
-        result = request.json
-        select_role = Roles.query.all()
+        super_admin = super_admin_role()
+        current_user = get_jwt_identity()
+        if current_user['role'] == str(super_admin):
+            result = request.json
+            select_role = Roles.query.all()
 
-        for i in select_role:
-            if result['name'] == i.name:
-                return response_handler.bad_request('Role is Exist')
-        roles = Roles(id_role = uuid4(),
-                      name = result['name'],
-                      created_at = datetime.now())
-        db.session.add(roles)
-        db.session.commit()
+            for i in select_role:
+                if result['name'] == i.name:
+                    return response_handler.bad_request('Role is Exist')
+            roles = Roles(id_role = uuid4(),
+                        name = result['name'],
+                        created_at = datetime.now())
+            db.session.add(roles)
+            db.session.commit()
 
-        data = {
-            "id_roles": roles.id_role,
-            "name": roles.name,
-            "created_at": roles.created_at
-        }
-        return response_handler.created(data,"Roles Successfull Created ")
+            data = {
+                "id_roles": roles.id_role,
+                "name": roles.name,
+                "created_at": roles.created_at
+            }
+            return response_handler.created(data,"Roles Successfull Created ")
+        else:
+            return response_handler.unautorized("You are not Authorized here")
     
     except KeyError as err:
         return response_handler.bad_request(err)

@@ -16,13 +16,15 @@ def login():
             return response_handler.bad_request("password must be filled")
         
         user = User.query.filter_by(username = json_body['username']).first()
+    
         if not user:
-            return response_handler.not_found("user not found")
+            return response_handler.not_found("Username not found")
         
         if hash_password(json_body['password']) != user.password:
-            return response_handler.unautorized('login failed')
+            return response_handler.unautorized('login failed, please check your password again')
         
-        token = generate_token({"role": "role", "id_user": user.id_user})
+        token = generate_token({"role": user.id_role, "id_user": user.id_user})
+        print(user.id_role)
         return response_handler.ok(data= token, message='login successful, have a nice day')
     
     except KeyError as err:

@@ -9,6 +9,15 @@ class Db_config(object):
 
     SQLALCHEMY_DATABASE_URI = dialect+'://'+username+':'+password+'@'+host+'/'+database
 
+class Mail_config(object):
+        MAIL_SERVER = os.getenv('MAIL_SERVER')
+        MAIL_PORT = os.getenv('MAIL_PORT')
+        MAIL_USE_TLS = False
+        MAIL_USE_SSL = True
+        MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+        MAIL_PASSWORD =  os.getenv('MAIL_PASSWORD')
+        
+     
 class Cloudinary_config(object):
     cloudinary.config(cloud_name = os.getenv('CLOUD_NAME'), api_key=os.getenv('API_KEY'), 
     api_secret=os.getenv('API_SECRET'))
