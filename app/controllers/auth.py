@@ -23,8 +23,11 @@ def login():
         if hash_password(json_body['password']) != user.password:
             return response_handler.unautorized('login failed, please check your password again')
         
+        if user.is_active == False:
+            return response_handler.unautorized('login failed, please activate your account first')
+        
         token = generate_token({"role": user.id_role, "id_user": user.id_user})
-        print(user.id_role)
+       
         return response_handler.ok(data= token, message='login successful, have a nice day')
     
     except KeyError as err:

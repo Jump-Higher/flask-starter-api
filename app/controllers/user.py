@@ -73,7 +73,7 @@ def create_user():
         id_role = select_user_role()
         id_user = uuid4()
 
-        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : http://127.0.0.1:5000/activate/{id_user}","Activate Your Account")
+        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('URL_ACTIVATE_USER')}{id_user}","Activate Your Account")
         mail.send(sendMail)
 
         # add to tbl_user
@@ -308,6 +308,7 @@ def list_user():
                 "username": i.username,
                 "email": i.email,
                 "password": i.password,
+                "picture" : i.picture,
                 "address":{
                     "id_address": i.address.id_address,
                     "address": i.address.address
@@ -329,4 +330,14 @@ def list_user():
         return response_handler.ok_with_meta(data,meta)
     except Exception as err:
         return response_handler.bad_gateway(err)
+    
+def activate_user(id):
+    try:
+        user = select_by_id(id)
+        user.is_active = True
+        db.session.commit()
+        return response_handler.ok("", "Your account has been activate")
+    except Exception as err:
+        return response_handler.bad_gateway(err)
+        
         
