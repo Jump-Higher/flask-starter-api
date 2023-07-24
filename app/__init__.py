@@ -7,6 +7,7 @@ from flask_jwt_extended import JWTManager
 from app.prefix_middleware import PrefixMiddleware
 from flask_mail import Mail
 import cloudinary, os
+from app.hash import hash_password
 
 app = Flask(__name__)
 app.config.from_object(Cloudinary_config)
@@ -59,7 +60,10 @@ with app.app_context():
                 name='super admin',
                 username='super_admin',
                 email='super@admin.com',
-                password='Super@dmin1',
+                password=hash_password('Super@dmin1'),
+                status = True,
+                is_deleted = False,
+                is_active=True,
                 created_at=datetime.now(),
                 picture=os.getenv('DEFAULT_PROFILE'),
                 id_address=super_admin_address,

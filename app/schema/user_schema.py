@@ -5,7 +5,7 @@ from app.schema.roles_schema import RolesSchema
 
 class UserSchema(Schema):
     class Meta: 
-        fields = ('id_user','picture','name','email','password','username','phone_number','address', 'created_at')
+        fields = ('id_user','picture','name','email','password','username','phone_number','address', 'created_at','status')
 
     id_user = fields.UUID(dump_only=True)
     name = fields.Str(required=True,

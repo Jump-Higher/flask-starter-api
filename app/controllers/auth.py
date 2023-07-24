@@ -4,6 +4,8 @@ from app.models.user import User
 from app.hash import hash_password
 from app.generate_token import generate_token
 from flask_jwt_extended import create_access_token, create_refresh_token
+from datetime import datetime
+from app import db
 
 
 def login():
@@ -26,6 +28,8 @@ def login():
         if user.is_active == False:
             return response_handler.unautorized('login failed, please activate your account first')
         
+        user.last_login = datetime.now()
+        db.session.commit()
         token = generate_token({"role": user.id_role, "id_user": user.id_user})
        
         return response_handler.ok(data= token, message='login successful, have a nice day')

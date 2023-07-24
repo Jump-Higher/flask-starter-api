@@ -84,6 +84,7 @@ def create_user():
                     password = hash_password(json_body['password']),
                     picture = os.getenv('DEFAULT_PROFILE'),
                     id_role = id_role,
+                    status = True,
                     id_address = id_address,
                     is_active = False,
                     is_deleted = False,
@@ -111,9 +112,7 @@ def create_user():
     
     except Exception as err:
         return response_handler.bad_gateway(str(err))
-    
-
-    
+   
 def read_user(id):
     try:
         #check user is exist or not
@@ -175,7 +174,6 @@ def update_user_role(id):
     
     except Exception as err:
         return response_handler.bad_gateway(str(err))
- 
 
 @jwt_required()
 def update_user(id):
@@ -309,7 +307,11 @@ def list_user():
                 "email": i.email,
                 "password": i.password,
                 "picture" : i.picture,
+                "phone_number" : i.phone_number,
                 "is_active" : i.is_active,
+                "is_deleted" : i.is_deleted,
+                "created_at" : i.created_at,
+                "updated_at" : i.updated_at,
                 "address":{
                     "id_address": i.address.id_address,
                     "address": i.address.address
@@ -337,8 +339,21 @@ def activate_user(id):
         user = select_by_id(id)
         user.is_active = True
         db.session.commit()
+
         return response_handler.ok("", "Your account has been activate")
     except Exception as err:
         return response_handler.bad_gateway(err)
-        
-        
+
+@jwt_required()      
+def deactivate_user(id):
+    try:
+        super_admin = super_admin_role()
+        current_user = get_jwt_identity()
+        if current_user['role'] == str(super_admin):
+            user = select_by_id(id)
+            user.status = False
+            db.session.commit()
+            return response_handler.ok("", f"{user.username} success to deactivate")
+        return response_handler.unautorized("You are not allowed here")
+    except Exception as err:
+        return response_handler.bad_gateway(err)
