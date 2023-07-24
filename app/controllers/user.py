@@ -309,6 +309,7 @@ def list_user():
                 "email": i.email,
                 "password": i.password,
                 "picture" : i.picture,
+                "is_active" : i.is_active,
                 "address":{
                     "id_address": i.address.id_address,
                     "address": i.address.address
