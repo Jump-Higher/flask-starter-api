@@ -1,6 +1,6 @@
 from app import response_handler
 from flask import request
-from app.models.roles import Roles, super_admin_role
+from app.models.roles import Roles, super_admin_role, admin_role
 from uuid import uuid4
 from datetime import datetime
 from app import db
@@ -108,8 +108,9 @@ def edit_role(id):
 def list_role():
     try:
         super_admin = super_admin_role()
+        admin = admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin) or 'admin':
+        if current_user['role'] == str(super_admin) or current_user['role'] == str(admin):
             page = request.args.get('page', 1, type=int)
             per_page = request.args.get('per_page', 5, type=int )
             total_role = Roles.query.count()
@@ -118,11 +119,11 @@ def list_role():
 
             role = Roles.query.order_by(Roles.created_at.desc()).paginate(page = page, per_page = per_page)
             data = []
-            for role in role.items:
+            for i in role.items:
                 data.append({
-                    "id_role": role.id_role,
-                    "name": role.name,
-                    "created_at": role.created_at
+                    "id_role": i.id_role,
+                    "name": i.name,
+                    "created_at": i.created_at
                 })
             meta = {
                 "page": role.page,
