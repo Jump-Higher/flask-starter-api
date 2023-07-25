@@ -86,7 +86,7 @@ def create_user():
                     id_role = id_role,
                     status = True,
                     id_address = id_address,
-                    is_active = False,
+                    is_active = True,
                     is_deleted = False,
                     created_at = date,
                     updated_at = date,
