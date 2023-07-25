@@ -74,7 +74,7 @@ def create_user():
         id_user = uuid4()
 
         sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('URL_ACTIVATE_USER')}{id_user}","Activate Your Account")
-        #mail.send(sendMail)
+        mail.send(sendMail)
 
         # add to tbl_user
         new_user = User(id_user = id_user, 
@@ -86,7 +86,7 @@ def create_user():
                     id_role = id_role,
                     status = True,
                     id_address = id_address,
-                    is_active = True,
+                    is_active = False,
                     is_deleted = False,
                     created_at = date,
                     updated_at = date,
