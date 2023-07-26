@@ -347,13 +347,16 @@ def activate_user(activation_token):
         return response_handler.bad_gateway(err)
     
     user = User.query.filter_by(email=email, is_active=False).first()
+    # return redirect('http://localhost:3000/successful_activation')
+
 
     if user:
         user.is_active = True
         db.session.commit()
-        return redirect('http://localhost:3000/successful_activation')
+        return redirect(os.getenv('BASE_URL_FRONTEND'))
     else: 
-        return response_handler.bad_request("Your account is already activated or token is expired")
+        return response_handler.not_found("Your link is expired or your account was activated")
+
  
 @jwt_required()      
 def deactivate_user(id):
