@@ -1,4 +1,4 @@
-from flask import request, redirect
+from flask import request, redirect, jsonify
 from json_checker import Checker
 from app import db, request_mapping, request_struct, response_handler, secret_key
 from app.hash import hash_password
@@ -338,7 +338,7 @@ def list_user():
         return response_handler.ok_with_meta(data,meta)
     except Exception as err:
         return response_handler.bad_gateway(err)
-    
+import json 
 def activate_user(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
     try:
@@ -347,15 +347,16 @@ def activate_user(activation_token):
         return response_handler.bad_gateway(err)
     
     user = User.query.filter_by(email=email, is_active=False).first()
-    # return redirect('http://localhost:3000/successful_activation')
-
-
+    
+    redirect_url = os.getenv('BASE_URL_FRONTEND')
+      
     if user:
         user.is_active = True
         db.session.commit()
-        return redirect(os.getenv('BASE_URL_FRONTEND'))
+        return redirect(redirect_url + "?status=" + json.dumps("OK")) 
     else: 
-        return response_handler.not_found("Your link is expired or your account was activated")
+        return redirect(redirect_url + "?status=" + json.dumps("NOT_FOUND")) 
+
 
  
 @jwt_required()      
