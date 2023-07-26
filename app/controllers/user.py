@@ -1,6 +1,6 @@
-from flask import request
+from flask import request, redirect
 from json_checker import Checker
-from app import db, request_mapping, request_struct, response_handler
+from app import db, request_mapping, request_struct, response_handler, secret_key
 from app.hash import hash_password
 from uuid import uuid4
 from datetime import datetime
@@ -18,6 +18,9 @@ from app.models.roles import select_user_role, super_admin_role
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import mail
 from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
+from app.controllers.send import generate_activation_token
+
 
 def sendEmail(email,messageBody,subjectBody):
     sendMail = Message(
@@ -43,7 +46,7 @@ def get_create_user():
     except Exception as err:
         return response_handler.bad_gateway(str(err))
 
-def create_user():
+def register():
     try:
         json_body = request.json
         user_schema = UserSchema()
@@ -72,8 +75,10 @@ def create_user():
         date = datetime.now()
         id_role = select_user_role()
         id_user = uuid4()
+        activation_token = generate_activation_token(json_body['email'])
 
-        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('URL_ACTIVATE_USER')}{id_user}","Activate Your Account")
+        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('BASE_URL_BACKEND')}activate_user/{activation_token}","Activate Your Account")
+
         mail.send(sendMail)
 
         # add to tbl_user
@@ -334,16 +339,22 @@ def list_user():
     except Exception as err:
         return response_handler.bad_gateway(err)
     
-def activate_user(id):
+def activate_user(activation_token):
+    serializer = URLSafeTimedSerializer(secret_key)
     try:
-        user = select_by_id(id)
-        user.is_active = True
-        db.session.commit()
-
-        return response_handler.ok("", "Your account has been activate")
+        email = serializer.loads(activation_token, max_age=3600)  # Token expires after 1 hour (3600 seconds)
     except Exception as err:
         return response_handler.bad_gateway(err)
+    
+    user = User.query.filter_by(email=email, is_active=False).first()
 
+    if user:
+        user.is_active = True
+        db.session.commit()
+        return redirect('http://localhost:3000/successful_activation')
+    else: 
+        return response_handler.bad_request("Your account is already activated or token is expired")
+ 
 @jwt_required()      
 def deactivate_user(id):
     try:

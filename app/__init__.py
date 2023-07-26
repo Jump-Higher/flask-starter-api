@@ -11,6 +11,7 @@ from app.hash import hash_password
 
 app = Flask(__name__)
 app.config.from_object(Cloudinary_config)
+secret_key = app.config['SECRET_KEY'] = "keysyuper"
 
 app.config.from_object(Db_config)
 
