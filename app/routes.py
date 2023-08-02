@@ -4,7 +4,6 @@ from app.controllers import user, auth, roles, send
 app.route('/register',methods = ['POST'])(user.register)
 app.route('/user/<id>',methods = ['GET'])(user.read_user)
 app.route('/user/update/<id>',methods = ['PUT'])(user.update_user)
-app.route('/user/delete/<id>',methods = ['PATCH'])(user.delete_user)
 app.route('/users',methods = ['GET'])(user.list_user)
 
 app.route('/user/update_role/<id>',methods = ['PATCH'])(user.update_user_role)

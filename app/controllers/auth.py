@@ -1,12 +1,10 @@
-from app import response_handler
+from datetime import datetime
 from flask import request
+from flask_jwt_extended import create_access_token, create_refresh_token
+from app import db, response_handler
 from app.models.user import User
 from app.hash import hash_password
 from app.generate_token import generate_token
-from flask_jwt_extended import create_access_token, create_refresh_token
-from datetime import datetime
-from app import db
-
 
 def login():
     try:        
@@ -25,8 +23,8 @@ def login():
         if hash_password(json_body['password']) != user.password:
             return response_handler.unautorized('login failed, please check your password again')
         
-        if user.is_active == False:
-            return response_handler.unautorized('login failed, please activate your account first')
+        if user.status == False:
+            return response_handler.unautorized('login failed, please activate your account first or your account is deactivated')
         
         user.last_login = datetime.now()
         db.session.commit()

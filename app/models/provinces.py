@@ -1,6 +1,6 @@
+import uuid
 from sqlalchemy.dialects.postgresql import UUID
 from app import db
-import uuid
 
 class Provinces(db.Model):
     __tablename__ = 'tbl_provinces'

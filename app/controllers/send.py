@@ -28,10 +28,10 @@ def activate_user(activation_token):
     except:
         return jsonify({'message': 'Invalid or expired activation token.'}), 400
 
-    user = User.query.filter_by(email=email, is_active=False).first()
+    user = User.query.filter_by(email=email, status=False).first()
 
     if user:
-        user.is_active = True
+        user.status = True
         db.session.commit()
         return redirect('http://localhost:3000/successful_activation')
     else:

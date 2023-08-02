@@ -1,50 +1,19 @@
-from flask import request, redirect, jsonify
-from json_checker import Checker
-from app import db, request_mapping, request_struct, response_handler, secret_key
-from app.hash import hash_password
-from uuid import uuid4
+import cloudinary, os, cloudinary.uploader
 from datetime import datetime
-from app.models.user import *
-from app.models.address import Address, select_user_address
-from app.models.roles import Roles
-from app.response_validator import *
-from sqlalchemy import update
-import cloudinary,os
-from cloudinary.uploader import upload
-from app.schema.user_schema import UserSchema
-from app.schema.roles_schema import RolesSchema
-from app.schema.address_schema import AddressSchema
-from app.models.roles import select_user_role, super_admin_role
+from uuid import uuid4
+from flask import request, redirect
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import mail
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
-from app.controllers.send import generate_activation_token
-
-
-def sendEmail(email,messageBody,subjectBody):
-    sendMail = Message(
-                 subject = subjectBody,
-                 sender = os.getenv('MAIL_USERNAME'),
-                 recipients = [email],
-                 body = messageBody
-            )
-    return sendMail
-
-def get_create_user():
-    try:
-        role = Roles.query.all()
-
-        list_role = []
-        for i in role:
-            list_role.append({
-                "id_role": i.id_role,
-                "role": i.name
-            })
-
-        return response_handler.ok(list_role,'')
-    except Exception as err:
-        return response_handler.bad_gateway(str(err))
+from app import db, response_handler, secret_key, mail
+from app.controllers.send import generate_activation_token, sendEmail
+from app.hash import hash_password
+from app.models.user import User, select_users, select_by_id
+from app.models.address import Address, select_user_address
+from app.models.roles import Roles, select_user_role, super_admin_role
+from app.schema.user_schema import UserSchema
+from app.schema.roles_schema import RolesSchema
+from app.schema.address_schema import AddressSchema 
 
 def register():
     try:
@@ -70,16 +39,14 @@ def register():
                 return response_handler.bad_request('Username is Exist')
             elif json_body['email'] == i['email']:
                 return response_handler.bad_request('Email is Exist')
-    
+        
+        id_user = uuid4()
         id_address = uuid4()
         date = datetime.now()
-        id_role = select_user_role()
-        id_user = uuid4()
+        # id_role = select_user_role()
         activation_token = generate_activation_token(json_body['email'])
+        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('ACTIVATE_ACCOUNT_PREFIX')}activate_user/{activation_token}","Activate Your Account")
 
-        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('BASE_URL_BACKEND')}activate_user/{activation_token}","Activate Your Account")
-
-        mail.send(sendMail)
 
         # add to tbl_user
         new_user = User(id_user = id_user, 
@@ -87,25 +54,21 @@ def register():
                     username = json_body['username'],
                     email = json_body['email'],
                     password = hash_password(json_body['password']),
-                    picture = os.getenv('DEFAULT_PROFILE'),
-                    id_role = id_role,
-                    status = True,
-                    id_address = id_address,
-                    is_active = False,
-                    is_deleted = False,
-                    created_at = date,
-                    updated_at = date,
+                    picture = os.getenv('DEFAULT_PROFILE_PICTURE'),
+                    id_role = select_user_role(),
+                    status = False,
+                    id_address = id_address
                     )
-                    
-        
+                     
         # add to tbl_address
-        address = Address(id_address = id_address,
-                          created_at = date,
-                          updated_at = date)
+        address = Address(id_address = id_address)
         
         db.session.add(new_user)
         db.session.add(address)
         db.session.commit()
+        
+        mail.send(sendMail)
+        
 
         user_schema = UserSchema(only=('id_user', 'name', 'username', 'email', 'password', 'created_at'))
         data = user_schema.dump(new_user)
@@ -167,10 +130,13 @@ def update_user_role(id):
             if not user:
                 return response_handler.not_found("User not found")
             else:
-                user.id_role = json_body['id_role']
-                user.updated_at = datetime.now()
-                db.session.commit()
-                return response_handler.ok("", "The user role is changed")
+                if str(user.id_role) == json_body['id_role']:
+                    return response_handler.bad_request('Role is already change')
+                else:
+                    user.id_role = json_body['id_role']
+                    user.updated_at = datetime.now()
+                    db.session.commit()
+                    return response_handler.ok("", "The user role is changed")
         else:
             return response_handler.unautorized("You are not Authorized here")
     
@@ -253,34 +219,6 @@ def update_user(id):
     except Exception as err:
         return response_handler.bad_gateway(str(err))
 
-@jwt_required()
-def delete_user(id):
-    try:
-        current_user = get_jwt_identity()
-        if current_user['id_user'] == id:
-            id_user = User.query.all()
-            exists = False
-            for i in id_user:
-                if (str(i.id_user) == id):
-                    exists = True
-                    break
-
-            if not exists:
-                return response_handler.not_found('User Not Found')
-            
-            user = select_by_id(id)
-            user.is_deleted = True
-
-            db.session.commit()
-            # cloudinary.uploader.destroy("api-blog/users/user_"+str(user.id_user))
-            return response_handler.ok("","User Successfull Deleted")
-        else:
-            return response_handler.bad_request("You can't delete another people account")
-
-    
-    except Exception as err:
-        return response_handler.bad_gateway(err)
-
 def list_user():
     try:
         page = request.args.get('page', 1, type=int)
@@ -312,9 +250,8 @@ def list_user():
                 "email": i.email,
                 "password": i.password,
                 "picture" : i.picture,
-                "phone_number" : i.phone_number,
-                "is_active" : i.is_active,
-                "is_deleted" : i.is_deleted,
+                "phone_number" : i.phone_number, 
+                "status" : i.status,
                 "created_at" : i.created_at,
                 "updated_at" : i.updated_at,
                 "address":{
@@ -338,6 +275,7 @@ def list_user():
         return response_handler.ok_with_meta(data,meta)
     except Exception as err:
         return response_handler.bad_gateway(err)
+    
 import json 
 def activate_user(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
@@ -346,29 +284,33 @@ def activate_user(activation_token):
     except Exception as err:
         return response_handler.bad_gateway(err)
     
-    user = User.query.filter_by(email=email, is_active=False).first()
+    user = User.query.filter_by(email=email, status=False).first()
     
     redirect_url = os.getenv('BASE_URL_FRONTEND')
       
     if user:
-        user.is_active = True
+        user.status = True
         db.session.commit()
         return redirect(redirect_url + "?status=" + json.dumps("OK")) 
     else: 
         return redirect(redirect_url + "?status=" + json.dumps("NOT_FOUND")) 
 
-
- 
 @jwt_required()      
 def deactivate_user(id):
     try:
         super_admin = super_admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin):
+        if current_user['role'] == str(super_admin) or current_user['id_user'] == id:
             user = select_by_id(id)
-            user.status = False
-            db.session.commit()
-            return response_handler.ok("", f"{user.username} success to deactivate")
+            if user.status == False:
+                return response_handler.bad_request("Account already deactivate")
+            else:
+                user.status = False
+                db.session.commit()
+            if current_user['role'] == str(super_admin):
+                return response_handler.ok("", f"{user.username} success to deactivate")
+            elif current_user['id_user'] == id:
+                return response_handler.ok("", "Your account success to deactivate")
         return response_handler.unautorized("You are not allowed here")
     except Exception as err:
         return response_handler.bad_gateway(err)

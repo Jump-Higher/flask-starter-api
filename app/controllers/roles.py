@@ -1,10 +1,9 @@
-from app import response_handler
-from flask import request
-from app.models.roles import Roles, super_admin_role, admin_role
-from uuid import uuid4
 from datetime import datetime
-from app import db
+from uuid import uuid4
+from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from app import db, response_handler
+from app.models.roles import Roles, super_admin_role, admin_role
 
 @jwt_required()
 def create_role():
@@ -44,7 +43,7 @@ def read_roles():
     try:
         super_admin = super_admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin) or 'admin':
+        if current_user['role'] == str(super_admin) or 'Admin':
             query_role = Roles.query.all()
             data = []
             for role in query_role:
@@ -68,7 +67,7 @@ def edit_role(id):
         if current_user['role'] == str(super_admin):
             json_body = request.json
             if json_body['name']=="":
-                return response_handler.bad_request('name must be filled')
+                return response_handler.bad_request('Role name must be filled')
             
             query_roles = Roles.query.all()
             
@@ -96,7 +95,7 @@ def edit_role(id):
                 "created_at": role.created_at
             }
 
-            return response_handler.ok(data, message="succesfull")
+            return response_handler.ok(data, message="Role successfuly updated")
         return response_handler.unautorized("You are not allowed here")
 
     except KeyError as err:
@@ -154,8 +153,7 @@ def bulk_delete_roles():
         return response_handler.unautorized("You are not allowed here")
     except Exception as err:
         return response_handler.bad_gateway(err)
-
-
+ 
 # def delete_role(id):
 #     try:
 #         query_roles = Roles.query.all()

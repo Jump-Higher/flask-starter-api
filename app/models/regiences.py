@@ -1,7 +1,8 @@
+import uuid
 from sqlalchemy.dialects.postgresql import UUID
 from app import db
-from app.models import provinces
-import uuid
+# from app.models import provinces
+
 
 class Regiences(db.Model):
     __tablename__ = 'tbl_regiences'
