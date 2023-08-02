@@ -4,7 +4,7 @@ from uuid import uuid4
 from flask import request, redirect
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_mail import Message
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from app import db, response_handler, secret_key, mail
 from app.controllers.send import generate_activation_token, sendEmail
 from app.hash import hash_password
@@ -279,21 +279,21 @@ def list_user():
 import json 
 def activate_user(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
+    redirect_url = os.getenv('BASE_URL_FRONTEND')
     try:
         email = serializer.loads(activation_token, max_age=3600)  # Token expires after 1 hour (3600 seconds)
+    except SignatureExpired:
+        return redirect(redirect_url + "?status=" + json.dumps("EXPIRED")) 
     except Exception as err:
         return response_handler.bad_gateway(err)
     
     user = User.query.filter_by(email=email, status=False).first()
-    
-    redirect_url = os.getenv('BASE_URL_FRONTEND')
-      
     if user:
         user.status = True
         db.session.commit()
         return redirect(redirect_url + "?status=" + json.dumps("OK")) 
     else: 
-        return redirect(redirect_url + "?status=" + json.dumps("NOT_FOUND")) 
+        return redirect(redirect_url + "?status=" + json.dumps("NOT_FOUND"))
 
 @jwt_required()      
 def deactivate_user(id):
