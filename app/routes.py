@@ -5,6 +5,7 @@ app.route('/register',methods = ['POST'])(user.register)
 app.route('/user/<id>',methods = ['GET'])(user.read_user)
 app.route('/user/update/<id>',methods = ['PUT'])(user.update_user)
 app.route('/users',methods = ['GET'])(user.list_user)
+app.route('/user/delete/<email>', methods=['DELETE'])(user.delete_user)
 
 app.route('/user/update_role/<id>',methods = ['PATCH'])(user.update_user_role)
 app.route('/activate_user/<activation_token>', methods=['GET'])(user.activate_user)

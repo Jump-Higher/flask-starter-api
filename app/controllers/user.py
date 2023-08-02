@@ -281,7 +281,7 @@ def activate_user(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
     redirect_url = os.getenv('BASE_URL_FRONTEND')
     try:
-        email = serializer.loads(activation_token, max_age=3600)  # Token expires after 1 hour (3600 seconds)
+        email = serializer.loads(activation_token, max_age=int(os.getenv('MAX_AGE_MAIL')))  # Token expires after 1 hour (3600 seconds)
     except SignatureExpired:
         return redirect(redirect_url + "?status=" + json.dumps("EXPIRED")) 
     except Exception as err:
@@ -312,5 +312,22 @@ def deactivate_user(id):
             elif current_user['id_user'] == id:
                 return response_handler.ok("", "Your account success to deactivate")
         return response_handler.unautorized("You are not allowed here")
+    except Exception as err:
+        return response_handler.bad_gateway(err)
+
+
+def delete_user(email):
+    try:
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return response_handler.not_found("User not Found")
+        elif user:
+            address = Address.query.get(user.id_address)
+            if address:
+                db.session.delete(address)
+            
+            db.session.delete(user)
+            db.session.commit()
+            return response_handler.ok("User deleted successfull")
     except Exception as err:
         return response_handler.bad_gateway(err)

@@ -24,7 +24,8 @@ def sendEmail(email,messageBody,subjectBody):
 def activate_user(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
     try:
-        email = serializer.loads(activation_token, max_age=3600)  # Token expires after 1 hour (3600 seconds)
+        print(os.getenv('MAX_AGE_MAIL'))
+        email = serializer.loads(activation_token, max_age=os.getenv('MAX_AGE_MAIL'))  # Token expires after 1 hour (3600 seconds)
     except SignatureExpired as exp: 
         return response_handler.bad_gateway(jsonify(exp))
     except Exception as err:
