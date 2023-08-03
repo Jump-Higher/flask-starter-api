@@ -36,9 +36,9 @@ def register():
         # validate if username and email is exist
         for i in list:
             if json_body['username'] == i['username']:
-                return response_handler.bad_request('Username is Exist')
+                return response_handler.conflict('Username is Exist')
             elif json_body['email'] == i['email']:
-                return response_handler.bad_request('Email is Exist')
+                return response_handler.conflict('Email is Exist')
         
         id_user = uuid4()
         id_address = uuid4()
@@ -46,8 +46,7 @@ def register():
         # id_role = select_user_role()
         activation_token = generate_activation_token(json_body['email'])
         sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('ACTIVATE_ACCOUNT_PREFIX')}activate_user/{activation_token}","Activate Your Account")
-
-
+ 
         # add to tbl_user
         new_user = User(id_user = id_user, 
                     name = json_body['name'],
@@ -68,8 +67,7 @@ def register():
         db.session.commit()
         
         mail.send(sendMail)
-        
-
+         
         user_schema = UserSchema(only=('id_user', 'name', 'username', 'email', 'password', 'created_at'))
         data = user_schema.dump(new_user)
 
@@ -314,7 +312,6 @@ def deactivate_user(id):
         return response_handler.unautorized("You are not allowed here")
     except Exception as err:
         return response_handler.bad_gateway(err)
-
 
 def delete_user(email):
     try:

@@ -36,6 +36,15 @@ def bad_request(data):
     }
     return make_response(jsonify(response)),HTTPStatus.BAD_REQUEST.value
 
+def conflict(data):
+    response = {
+        "code": "409",
+        "status": "CONFLICT",
+        "errors": data
+    }
+    return make_response(jsonify(response)),HTTPStatus.CONFLICT.value
+
+
 def bad_gateway(data):
     response = {
         "code": "500",
