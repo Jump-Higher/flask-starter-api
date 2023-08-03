@@ -44,7 +44,7 @@ def generate_activation_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return serializer.dumps(email)
 
-def register():
+def register2():
     try:
         json_body = request.json
         user_schema = UserSchema()
@@ -68,14 +68,14 @@ def register():
                 return response_handler.bad_request('Username is Exist')
             elif json_body['email'] == i['email']:
                 return response_handler.bad_request('Email is Exist')
-    
+        
+        id_user = uuid4()
         id_address = uuid4()
         date = datetime.now()
-        id_role = select_user_role()
-        id_user = uuid4()
+        # id_role = select_user_role()
         activation_token = generate_activation_token(json_body['email'])
-        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('BASE_URL')}activate_user/{activation_token}","Activate Your Account")
-        mail.send(sendMail)
+        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('BASE_URL_FRONTEND')}/{activation_token}","Activate Your Account")
+
 
         # add to tbl_user
         new_user = User(id_user = id_user, 
@@ -83,25 +83,21 @@ def register():
                     username = json_body['username'],
                     email = json_body['email'],
                     password = hash_password(json_body['password']),
-                    picture = os.getenv('DEFAULT_PROFILE'),
-                    id_role = id_role,
-                    status = True,
-                    id_address = id_address,
-                    is_active = False,
-                    is_deleted = False,
-                    created_at = date,
-                    updated_at = date,
+                    picture = os.getenv('DEFAULT_PROFILE_PICTURE'),
+                    id_role = select_user_role(),
+                    status = False,
+                    id_address = id_address
                     )
-                    
-        
+                     
         # add to tbl_address
-        address = Address(id_address = id_address,
-                          created_at = date,
-                          updated_at = date)
+        address = Address(id_address = id_address)
         
         db.session.add(new_user)
         db.session.add(address)
         db.session.commit()
+        
+        mail.send(sendMail)
+        
 
         user_schema = UserSchema(only=('id_user', 'name', 'username', 'email', 'password', 'created_at'))
         data = user_schema.dump(new_user)
@@ -113,4 +109,4 @@ def register():
     
     except Exception as err:
         return response_handler.bad_gateway(str(err))
-   
+  

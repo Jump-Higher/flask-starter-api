@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import request
-from flask_jwt_extended import create_access_token, create_refresh_token
+# from flask_jwt_extended import decode_token
 from app import db, response_handler
 from app.models.user import User
 from app.hash import hash_password
@@ -28,11 +28,14 @@ def login():
         
         user.last_login = datetime.now()
         db.session.commit()
-        token = generate_token({"role": user.id_role, "id_user": user.id_user})
-       
-        return response_handler.ok(data= token, message='login successful, have a nice day')
+        token = generate_token({"id_user":user.id_user, "role":user.roles.name})
+        # decode token
+        # print(decode_token(token['token']['access_token']))
+        # decode = (decode_token(token['token']['access_token']))
+        # print(decode['sub']['role'])
+        return response_handler.ok(token, message='login successful, have a nice day')
     
     except KeyError as err:
         return response_handler.bad_request(f'{err.args[0]} field must be filled')
     except Exception as err:
-        return response_handler.bad_gateway("server error")
+        return response_handler.bad_gateway(err)
