@@ -44,7 +44,8 @@ def register():
         id_address = uuid4()
         date = datetime.now()
         # id_role = select_user_role()
-        activation_token = generate_activation_token(json_body['email'])
+        token = generate_activation_token(json_body['email'])
+        activation_token = token.replace('.','')
         sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('ACTIVATE_ACCOUNT_PREFIX')}activate_user/{activation_token}","Activate Your Account")
 
         # add to tbl_user
