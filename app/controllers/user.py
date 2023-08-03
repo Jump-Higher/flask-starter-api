@@ -46,7 +46,7 @@ def register():
         # id_role = select_user_role()
         activation_token = generate_activation_token(json_body['email'])
         sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('ACTIVATE_ACCOUNT_PREFIX')}activate_user/{activation_token}","Activate Your Account")
- 
+
         # add to tbl_user
         new_user = User(id_user = id_user, 
                     name = json_body['name'],
@@ -70,7 +70,7 @@ def register():
          
         user_schema = UserSchema(only=('id_user', 'name', 'username', 'email', 'password', 'created_at'))
         data = user_schema.dump(new_user)
-
+        print(activation_token)
         return response_handler.created(data, 'Check registered email to activate your account')
     
     except KeyError as err:
@@ -338,11 +338,10 @@ def activate_user2(activation_token):
         return response_handler.bad_request("Your Token is Expired") 
     except Exception as err:
         return response_handler.bad_gateway(err)
-    
     user = User.query.filter_by(email=email, status=False).first()
     if user:
         user.status = True
         db.session.commit()
-        return response_handler.ok("Your account success to activated")
+        return response_handler.ok("","Your account success to activated")
     else: 
         return response_handler.not_found("Account not found or already activated")

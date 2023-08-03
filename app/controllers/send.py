@@ -19,8 +19,7 @@ def sendEmail(email,messageBody,subjectBody):
                  body = messageBody
             )
     return sendMail
- 
-
+  
 def activate_user(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
     try:
