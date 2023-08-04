@@ -334,7 +334,8 @@ def activate_user2(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
     redirect_url = os.getenv('BASE_URL_FRONTEND')
     try:
-        email = serializer.loads(activation_token, max_age=int(os.getenv('MAX_AGE_MAIL')))  # Token expires after 1 hour (3600 seconds)
+        real_token = activation_token.replace('_','.')
+        email = serializer.loads(real_token, max_age=int(os.getenv('MAX_AGE_MAIL')))  # Token expires after 1 hour (3600 seconds)
     except SignatureExpired:
         return response_handler.bad_request("Your Token is Expired") 
     except Exception as err:
