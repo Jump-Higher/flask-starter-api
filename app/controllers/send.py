@@ -64,18 +64,18 @@ def register2():
         # validate if username and email is exist
         for i in list:
             if json_body['username'] == i['username']:
-                return response_handler.bad_request('Username is Exist')
+                return response_handler.conflict('Username is Exist')
             elif json_body['email'] == i['email']:
-                return response_handler.bad_request('Email is Exist')
+                return response_handler.conflict('Email is Exist')
         
         id_user = uuid4()
         id_address = uuid4()
         date = datetime.now()
         # id_role = select_user_role()
         real_token = generate_activation_token(json_body['email'])
-        activation_token = real_token.replace('.','_')
+        activation_token = real_token.replace('.',',') 
         print(activation_token)
-        sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('BASE_URL_FRONTEND')}/{activation_token}","Activate Your Account")
+        # sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('BASE_URL_FRONTEND')}/{activation_token}","Activate Your Account")
  
         # add to tbl_user
         new_user = User(id_user = id_user, 
@@ -96,7 +96,7 @@ def register2():
         db.session.add(address)
         db.session.commit()
         
-        mail.send(sendMail)
+        # mail.send(sendMail)
         
 
         user_schema = UserSchema(only=('id_user', 'name', 'username', 'email', 'password', 'created_at'))

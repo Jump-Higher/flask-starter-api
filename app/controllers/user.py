@@ -299,14 +299,15 @@ def deactivate_user(id):
     try:
         super_admin = super_admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin) or current_user['id_user'] == id:
-            user = select_by_id(id)
+        if current_user['role'] == 'super_admin' or current_user['id_user'] == id:
+            user = select_by_id(id) 
+            print(current_user['role'])
             if user.status == False:
                 return response_handler.bad_request("Account already deactivate")
             else:
                 user.status = False
                 db.session.commit()
-            if current_user['role'] == str(super_admin):
+            if current_user['role'] == 'super_admin':
                 return response_handler.ok("", f"{user.username} success to deactivate")
             elif current_user['id_user'] == id:
                 return response_handler.ok("", "Your account success to deactivate")
@@ -332,18 +333,17 @@ def delete_user(email):
      
 def activate_user2(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
-    redirect_url = os.getenv('BASE_URL_FRONTEND')
     try:
-        real_token = activation_token.replace('_','.')
+        real_token = activation_token.replace(',','.')
         email = serializer.loads(real_token, max_age=int(os.getenv('MAX_AGE_MAIL')))  # Token expires after 1 hour (3600 seconds)
+        user = User.query.filter_by(email=email, status=False).first()
+        if user:
+            user.status = True
+            db.session.commit()
+            return response_handler.ok("","Your account success to activated")
+        else: 
+            return response_handler.not_found("Account not found or already activated")
     except SignatureExpired:
-        return response_handler.bad_request("Your Token is Expired") 
+        return response_handler.unautorized("Your Token is Expired") 
     except Exception as err:
         return response_handler.bad_gateway(err)
-    user = User.query.filter_by(email=email, status=False).first()
-    if user:
-        user.status = True
-        db.session.commit()
-        return response_handler.ok("","Your account success to activated")
-    else: 
-        return response_handler.not_found("Account not found or already activated")
