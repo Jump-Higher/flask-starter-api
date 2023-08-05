@@ -334,7 +334,7 @@ def delete_user(email):
 def activate_user2(activation_token):
     serializer = URLSafeTimedSerializer(secret_key)
     try:
-        real_token = activation_token.replace(',','.')
+        real_token = activation_token.replace('|','.')
         email = serializer.loads(real_token, max_age=int(os.getenv('MAX_AGE_MAIL')))  # Token expires after 1 hour (3600 seconds)
         user = User.query.filter_by(email=email, status=False).first()
         if user:

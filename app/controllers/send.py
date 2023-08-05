@@ -73,7 +73,7 @@ def register2():
         date = datetime.now()
         # id_role = select_user_role()
         real_token = generate_activation_token(json_body['email'])
-        activation_token = real_token.replace('.',',') 
+        activation_token = real_token.replace('.','|') 
         print(activation_token)
         # sendMail = sendEmail(json_body['email'],f"Activate Your Account here : {os.getenv('BASE_URL_FRONTEND')}/{activation_token}","Activate Your Account")
  
