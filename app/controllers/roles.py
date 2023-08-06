@@ -3,23 +3,23 @@ from uuid import uuid4
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db, response_handler
-from app.models.roles import Roles, super_admin_role, admin_role
-
+from app.models.roles import Roles, super_admin_role, admin_role, select_role, select_by_id
+from app.schema.roles_schema import RolesSchema
+ 
 @jwt_required()
 def create_role():
     try:
         super_admin = super_admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin):
+        if current_user['id_role'] == str(super_admin):
             result = request.json
             select_role = Roles.query.all()
 
             for i in select_role:
                 if result['name'] == i.name:
-                    return response_handler.bad_request('Role is Exist')
+                    return response_handler.conflict('Role is Exist')
             roles = Roles(id_role = uuid4(),
-                        name = result['name'],
-                        created_at = datetime.now())
+                        name = result['name'])
             db.session.add(roles)
             db.session.commit()
 
@@ -39,23 +39,30 @@ def create_role():
         return response_handler.bad_gateway(err)
 
 @jwt_required()
-def read_roles():
+def read_role(id):
     try:
         super_admin = super_admin_role()
+        admin = admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin) or 'Admin':
-            query_role = Roles.query.all()
-            data = []
-            for role in query_role:
-                dct = {
-                    "id_role": role.id_role,
-                    "name": role.name,
-                    "created_at": role.created_at,
-                    "updated_at": role.updated_at
-                }
-                data.append(dct) 
-            return response_handler.ok(data, "")
-        return response_handler.unautorized("You are not allowed here")
+        if current_user['id_role'] == str(super_admin) or str(admin):
+            select_roles = select_role()
+            exist = False
+            for i in select_roles:
+                if(str(i.id_role) == id):
+                    exist = True
+                    break
+                elif not select_roles:
+                    break
+            if not exist:
+                return response_handler.not_found('Role Not Found') 
+            
+            role = select_by_id(id)
+            role_schema = RolesSchema()
+            data = role_schema.dump(role)
+            return response_handler.ok(data,"")
+        else:
+            return response_handler.unautorized("You are not Authorized here")
+            
     except Exception as err:
         return response_handler.bad_gateway(err)
 
@@ -64,7 +71,7 @@ def edit_role(id):
     try:
         super_admin = super_admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin):
+        if current_user['id_role'] == str(super_admin):
             json_body = request.json
             if json_body['name']=="":
                 return response_handler.bad_request('Role name must be filled')
@@ -82,20 +89,13 @@ def edit_role(id):
             
             list_role_name = [role.name for role in query_roles]
             if json_body['name'] in list_role_name:
-                return response_handler.bad_request('Role is exist')
+                return response_handler.conflict('Role is exist')
             
             role = Roles.query.get(id)
             role.name = json_body['name']
-            role.updated_at = datetime.now()
             db.session.commit()
 
-            data = {
-                "id_roles": role.id_role,
-                "name": role.name,
-                "created_at": role.created_at
-            }
-
-            return response_handler.ok(data, message="Role successfuly updated")
+            return response_handler.ok("", message="Role successfuly updated")
         return response_handler.unautorized("You are not allowed here")
 
     except KeyError as err:
@@ -104,12 +104,12 @@ def edit_role(id):
         return response_handler.bad_gateway(data="server error")
 
 @jwt_required()
-def list_role():
+def roles():
     try:
         super_admin = super_admin_role()
         admin = admin_role()
         current_user = get_jwt_identity()
-        if current_user['role'] == str(super_admin) or current_user['role'] == str(admin):
+        if current_user['id_role'] == str(super_admin) or str(admin):
             page = request.args.get('page', 1, type=int)
             per_page = request.args.get('per_page', 5, type=int )
             total_role = Roles.query.count()
@@ -122,7 +122,8 @@ def list_role():
                 data.append({
                     "id_role": i.id_role,
                     "name": i.name,
-                    "created_at": i.created_at
+                    "created_at": i.created_at,
+                    "updated_at" : i.updated_at
                 })
             meta = {
                 "page": role.page,

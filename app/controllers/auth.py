@@ -10,10 +10,10 @@ def login():
     try:        
         json_body = request.json        
         if json_body['username'] =="":
-            return response_handler.bad_request("username must be filled")
+            return response_handler.bad_request("Username must be filled")
         
         if json_body['password'] =="":
-            return response_handler.bad_request("password must be filled")
+            return response_handler.bad_request("Password must be filled")
         
         user = User.query.filter_by(username = json_body['username']).first()
     
@@ -21,14 +21,14 @@ def login():
             return response_handler.not_found("Username not found")
         
         if hash_password(json_body['password']) != user.password:
-            return response_handler.unautorized('login failed, please check your password again')
+            return response_handler.unautorized('Login failed, please check your password again')
         
         if user.status == False:
-            return response_handler.unautorized('login failed, please activate your account first or your account is deactivated')
+            return response_handler.unautorized('Login failed, please activate your account first or your account is deactivated')
         
         user.last_login = datetime.now()
         db.session.commit()
-        token = generate_token({"id_user":user.id_user, "role":user.roles.name})
+        token = generate_token({"id_user":user.id_user,"id_role":user.id_role, "role":user.roles.name})
         # decode token
         # print(decode_token(token['token']['access_token']))
         # decode = (decode_token(token['token']['access_token']))

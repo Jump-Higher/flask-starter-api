@@ -92,11 +92,7 @@ def read_user(id):
             elif not select_user:
                 break
         if not exist:
-            return response_handler.not_found('User Not Found')
-        # # check user is exist or not
-        # select_user = select_user_by_id(id)
-        # if select_user is None:
-        #     return response_handler.not_found('User Not Found')
+            return response_handler.not_found('User Not Found') 
         
         # add data user to response
         user = select_by_id(id)

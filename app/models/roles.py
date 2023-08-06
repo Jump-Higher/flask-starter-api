@@ -12,6 +12,11 @@ class Roles(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     # user = db.relationship('User', backref='tbl_roles', uselist=False)
 
+# object
+def select_role():
+    select_role = Roles.query.all()
+    return select_role
+
 def select_user_role():
     query = select(Roles.id_role).where(Roles.name == 'user')
     result = db.session.execute(query)
@@ -29,5 +34,9 @@ def admin_role():
     result = db.session.execute(query)
     id_role = result.scalar()
     return id_role
- 
+
+# object
+def select_by_id(id_role):
+    select_role = Roles.query.get(id_role)
+    return select_role
 
