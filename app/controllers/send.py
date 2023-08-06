@@ -40,7 +40,7 @@ def activate_user(activation_token):
         return jsonify({'message': 'User not found or already activated.'}), 400
     
 def generate_activation_token(email):
-    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    serializer = URLSafeTimedSerializer(secret_key)
     return serializer.dumps(email)
 
 def register2():
