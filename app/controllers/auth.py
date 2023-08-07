@@ -33,7 +33,7 @@ def login():
         # print(decode_token(token['token']['access_token']))
         # decode = (decode_token(token['token']['access_token']))
         # print(decode['sub']['role'])
-        return response_handler.ok(token, message='login successful, have a nice day')
+        return response_handler.ok(token, message='Login successful, have a nice day')
     
     except KeyError as err:
         return response_handler.bad_request(f'{err.args[0]} field must be filled')

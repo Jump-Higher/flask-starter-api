@@ -19,25 +19,6 @@ def sendEmail(email,messageBody,subjectBody):
                  body = messageBody
             )
     return sendMail
-  
-def activate_user(activation_token):
-    serializer = URLSafeTimedSerializer(secret_key)
-    try:
-        print(os.getenv('MAX_AGE_MAIL'))
-        email = serializer.loads(activation_token, max_age=os.getenv('MAX_AGE_MAIL'))  # Token expires after 1 hour (3600 seconds)
-    except SignatureExpired as exp: 
-        return response_handler.bad_gateway(jsonify(exp))
-    except Exception as err:
-        pass
-
-    user = User.query.filter_by(email=email, status=False).first()
-
-    if user:
-        user.status = True
-        db.session.commit()
-        return redirect('http://localhost:3000/successful_activation')
-    else:
-        return jsonify({'message': 'User not found or already activated.'}), 400
     
 def generate_activation_token(email):
     serializer = URLSafeTimedSerializer(secret_key)
@@ -70,8 +51,7 @@ def register2():
         
         id_user = uuid4()
         id_address = uuid4()
-        date = datetime.now()
-        # id_role = select_user_role()
+        date = datetime.now() 
         real_token = generate_activation_token(json_body['email'])
         activation_token = real_token.replace('.','|') 
         print(activation_token)
@@ -97,8 +77,7 @@ def register2():
         db.session.commit()
         
         # mail.send(sendMail)
-        
-
+         
         user_schema = UserSchema(only=('id_user', 'name', 'username', 'email', 'password', 'created_at'))
         data = user_schema.dump(new_user)
 

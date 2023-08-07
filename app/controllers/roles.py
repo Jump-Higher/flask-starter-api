@@ -28,15 +28,15 @@ def create_role():
                 "name": roles.name,
                 "created_at": roles.created_at
             }
-            return response_handler.created(data,"Roles Successfull Created ")
+            return response_handler.created(data,"Role Successfull Created ")
         else:
             return response_handler.unautorized("You are not Authorized here")
     
     except KeyError as err:
-        return response_handler.bad_request(err)
-    
+        return response_handler.bad_request(f'{err.args[0]} field must be filled')
+
     except Exception as err:
-        return response_handler.bad_gateway(err)
+        return response_handler.bad_gateway(str(err))
 
 @jwt_required()
 def read_role(id):
@@ -44,7 +44,8 @@ def read_role(id):
         super_admin = super_admin_role()
         admin = admin_role()
         current_user = get_jwt_identity()
-        if current_user['id_role'] == str(super_admin) or str(admin):
+        if current_user['id_role'] == str(super_admin) or current_user['id_role'] == str(admin):
+            print(super_admin,admin)
             select_roles = select_role()
             exist = False
             for i in select_roles:
@@ -64,7 +65,7 @@ def read_role(id):
             return response_handler.unautorized("You are not Authorized here")
             
     except Exception as err:
-        return response_handler.bad_gateway(err)
+        return response_handler.bad_gateway(str(err))
 
 @jwt_required()
 def edit_role(id):
@@ -101,7 +102,7 @@ def edit_role(id):
     except KeyError as err:
         return response_handler.bad_request(f'{err.args[0]} field must be filled')
     except Exception as err:
-        return response_handler.bad_gateway(data="server error")
+        return response_handler.bad_gateway(str(err))
 
 @jwt_required()
 def roles():
@@ -109,7 +110,7 @@ def roles():
         super_admin = super_admin_role()
         admin = admin_role()
         current_user = get_jwt_identity()
-        if current_user['id_role'] == str(super_admin) or str(admin):
+        if current_user['id_role'] == str(super_admin) or current_user['id_role'] == str(admin):
             page = request.args.get('page', 1, type=int)
             per_page = request.args.get('per_page', 5, type=int )
             total_role = Roles.query.count()
@@ -137,7 +138,7 @@ def roles():
             return response_handler.ok_with_meta(data,meta)
         return response_handler.unautorized("You are not allowed here")
     except Exception as err:
-        return response_handler.bad_gateway(err)
+        return response_handler.bad_gateway(str(err))
     
 @jwt_required()
 def bulk_delete_roles():

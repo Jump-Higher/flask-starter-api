@@ -1,4 +1,4 @@
-import uuid
+import uuid, os
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import select
 from app import db
@@ -18,19 +18,19 @@ def select_role():
     return select_role
 
 def select_user_role():
-    query = select(Roles.id_role).where(Roles.name == 'user')
+    query = select(Roles.id_role).where(Roles.name == os.getenv('USER_ROLE'))
     result = db.session.execute(query)
     id_role = result.scalar()
     return id_role
 
 def super_admin_role():
-    query = select(Roles.id_role).where(Roles.name == 'super_admin')
+    query = select(Roles.id_role).where(Roles.name == os.getenv('SUPER_ADMIN_ROLE'))
     result = db.session.execute(query)
     id_role = result.scalar()
     return id_role
 
 def admin_role():
-    query = select(Roles.id_role).where(Roles.name == 'admin')
+    query = select(Roles.id_role).where(Roles.name == os.getenv('ADMIN_ROLE'))
     result = db.session.execute(query)
     id_role = result.scalar()
     return id_role
