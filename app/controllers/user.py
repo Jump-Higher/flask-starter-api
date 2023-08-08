@@ -1,6 +1,6 @@
 import cloudinary, os, cloudinary.uploader, json
 from datetime import datetime
-from uuid import uuid4
+from uuid import uuid4, UUID
 from flask import request, redirect
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_mail import Message
@@ -52,22 +52,26 @@ def read_user(id):
 @jwt_required()
 def update_user_role(id):
     try:
+        UUID(id)
         super_admin = super_admin_role()
         current_user = get_jwt_identity()
         if current_user['id_role'] == str(super_admin):
             json_body = request.json
-            user = select_by_id(id)
+            user = select_by_id(id) 
             if not user:
                 return response_handler.not_found("User not found")
             else:
                 if str(user.id_role) == json_body['id_role']:
-                    return response_handler.bad_request('Role is already change')
+                    return response_handler.conflict('Role is already change')
                 else:
                     user.id_role = json_body['id_role']
                     db.session.commit()
                     return response_handler.ok("", "The user role is changed")
         else:
             return response_handler.unautorized("You are not Authorized here")
+        
+    except ValueError:
+        return response_handler.bad_request("Invalid ID")
     
     except KeyError as err:
         return response_handler.bad_request(f'{err.args[0]} field must be filled')
@@ -79,7 +83,7 @@ def update_user_role(id):
 def update_user(id):
     try:
         current_user = get_jwt_identity()
-        if current_user['id_user'] == id:
+        if current_user['id_user'] == str(id):
             form_body = request.form
             user_schema = UserSchema()
             address_schema = AddressSchema()
@@ -91,8 +95,7 @@ def update_user(id):
                 return response_handler.bad_request(errors)
             elif address_errors:
                 return response_handler.bad_request(address_errors)
-            date = datetime.now()
-
+            
             # select user by id
             user = select_by_id(id)
 
@@ -136,7 +139,7 @@ def update_user(id):
 
             return response_handler.ok("", "Your data is updated")
         else:
-            return response_handler.bad_request("You can't change another people account")
+            return response_handler.unautorized("You are not Allowed here")
 
     except KeyError as err:
         return response_handler.bad_request(f'{err.args[0]} field must be filled')
@@ -203,6 +206,8 @@ def list_user():
                 "has_next": user.has_next
             }
             return response_handler.ok_with_meta(data,meta)
+        else:
+            return response_handler.unautorized("You are not Allowed here")
     except Exception as err:
         return response_handler.bad_gateway(str(err))
  
@@ -210,18 +215,20 @@ def list_user():
 def deactivate_user(id):
     try:
         super_admin = super_admin_role()
+        admin = admin_role()
         current_user = get_jwt_identity()
-        if current_user['id_role'] == super_admin or current_user['id_user'] == id:
+        if current_user['id_role'] == str(super_admin) or current_user['id_user'] == str(id) or current_user['id_role'] == str(admin):
             user = select_by_id(id)  
             if user.status == False:
-                return response_handler.bad_request("Account already deactivate")
+                return response_handler.conflict("Account already deactivate")
             else:
                 user.status = False
                 db.session.commit()
-            if current_user['id_role'] == super_admin:
+            if current_user['id_role'] == str(super_admin) or current_user['id_role'] == str(admin):
                 return response_handler.ok("", f"{user.username} success to deactivate")
-            elif current_user['id_user'] == id:
+            elif current_user['id_user'] == str(id):
                 return response_handler.ok("", "Your account success to deactivate")
+            
         return response_handler.unautorized("You are not allowed here")
     except Exception as err:
         return response_handler.bad_gateway(str(err))

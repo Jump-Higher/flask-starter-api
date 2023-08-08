@@ -28,12 +28,20 @@ def login():
         
         user.last_login = datetime.now()
         db.session.commit()
-        token = generate_token({"id_user":user.id_user,"id_role":user.id_role, "role":user.roles.name})
+        data = generate_token({"id_user":user.id_user,
+                                "id_role":user.id_role, 
+                                "role":user.roles.name}
+                              )
+        user = {"id_user": user.id_user,
+                "id_role": user.id_role,
+                "role": user.roles.name,
+                "status": user.status}
+        data['data'] = user
         # decode token
         # print(decode_token(token['token']['access_token']))
         # decode = (decode_token(token['token']['access_token']))
         # print(decode['sub']['role'])
-        return response_handler.ok(token, message='Login successful, have a nice day')
+        return response_handler.ok(data, message='Login successful, have a nice day')
     
     except KeyError as err:
         return response_handler.bad_request(f'{err.args[0]} field must be filled')
